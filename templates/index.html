@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Digital Diet Recommendation App</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="title">Digital Diet Recommendation App</h1>
+
+        <form method="POST" class="form-box">
+            <label>Height (in cm)</label>
+            <input type="number" name="height" required>
+
+            <label>Weight (in kg)</label>
+            <input type="number" name="weight" required>
+
+            <label>Goal</label>
+            <select name="goal" required>
+                <option>Maintain Weight</option>
+                <option>Lose Weight</option>
+                <option>Gain Weight</option>
+            </select>
+
+            <button type="submit">Get Diet Plan</button>
+        </form>
+
+        {% if result %}
+        <div class="result-box">
+            <h2>Your Results</h2>
+
+            <p><strong>BMI:</strong> {{ result.bmi }}</p>
+            <p><strong>Daily Calorie Goal:</strong> {{ result.calories }} kcal</p>
+
+            <p><strong>Recommended Diet:</strong></p>
+
+            <div class="diet-box">
+                <pre>{{ result.diet }}</pre>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

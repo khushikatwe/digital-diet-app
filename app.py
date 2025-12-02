@@ -1,33 +1,53 @@
 from flask import Flask, render_template, request
+import sqlite3
+import math
 
 app = Flask(__name__)
 
-def get_diet_recommendation(goal, bmi):
-    if goal == "Lose Weight":
-        return (
-            "• High-protein diet (eggs, paneer, dal, tofu)\n"
-            "• Low-carb meals (millets, oats, salads)\n"
-            "• Avoid sugar & fried foods\n"
-            "• Drink 3–4L water daily\n"
-        )
-    elif goal == "Gain Weight":
-        return (
-            "• High-calorie nutrient-dense foods\n"
-            "• Peanut butter, bananas, dry fruits\n"
-            "• Rice, roti, potatoes, paneer, chicken\n"
-            "• 3 big meals + 2 snacks\n"
-        )
-    else:  # Maintain Weight
-        return (
-            "• Balanced diet with fruits, vegetables\n"
-            "• Dal, rice, roti, lean protein\n"
-            "• Healthy fats (nuts, seeds, ghee in moderation)\n"
-            "• 2–3L water daily\n"
-        )
+# ---------------------------
+# AI-LIKE DIET RECOMMENDER
+# ---------------------------
+def get_ai_diet(bmi, goal):
+    if goal == "weight_loss":
+        if bmi > 25:
+            return [
+                "High-protein meals (dal, eggs, tofu)",
+                "Low-carb rotis",
+                "Leafy salads",
+                "Green tea",
+                "Avoid fried/sugary foods",
+            ]
+        else:
+            return [
+                "Balanced Indian meals",
+                "2–3 fruits daily",
+                "Light exercise & walking",
+            ]
+
+    if goal == "weight_gain":
+        return [
+            "Calorie-dense foods (peanut butter, bananas, paneer)",
+            "Milk with oats",
+            "Strength training",
+            "Eggs / legumes daily",
+        ]
+
+    if goal == "maintain":
+        return [
+            "Balanced protein + carbs",
+            "Regular walking",
+            "Plenty of water",
+            "Seasonal fruits",
+        ]
+
+    return ["Eat balanced food throughout the day."]
 
 
+# ---------------------------
+# ROUTES
+# ---------------------------
 @app.route("/", methods=["GET", "POST"])
-def index():
+def home():
     result = None
 
     if request.method == "POST":
@@ -35,25 +55,48 @@ def index():
         weight = float(request.form["weight"])
         goal = request.form["goal"]
 
-        bmi = round(weight / (height ** 2), 2)
-
-        # calorie logic
-        if goal == "Lose Weight":
-            calories = int(weight * 22 * 0.85)
-        elif goal == "Gain Weight":
-            calories = int(weight * 22 * 1.15)
-        else:
-            calories = int(weight * 22)
-
-        diet = get_diet_recommendation(goal, bmi)
+        bmi = weight / (height * height)
+        calories = math.floor(24 * weight * 1.3)
+        diet_type = goal.replace("_", " ").title()
+        diet_list = get_ai_diet(bmi, goal)
 
         result = {
-            "bmi": bmi,
+            "bmi": round(bmi, 2),
             "calories": calories,
-            "diet": diet
+            "diet": diet_type,
+            "diet_list": diet_list
         }
 
-    return render_template("index.html", result=result)
+        # -------------------------
+        # SAVE HISTORY TO DATABASE
+        # -------------------------
+        conn = sqlite3.connect("users.db")
+        c = conn.cursor()
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                bmi REAL,
+                calories INTEGER,
+                diet TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        c.execute("INSERT INTO history (bmi, calories, diet) VALUES (?, ?, ?)",
+                  (result["bmi"], calories, diet_type))
+        conn.commit()
+        conn.close()
+
+    # -------------------------
+    # FETCH LAST 5 ENTRIES
+    # -------------------------
+    conn = sqlite3.connect("users.db")
+    c = conn.cursor()
+    c.execute("SELECT bmi, calories, diet, timestamp FROM history ORDER BY id DESC LIMIT 5")
+    history = c.fetchall()
+    conn.close()
+
+    return render_template("index.html", result=result, history=history)
+
 
 if __name__ == "__main__":
     app.run(debug=True)

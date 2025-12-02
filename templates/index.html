@@ -1,67 +1,101 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Digital Diet Recommendation App</title>
-    <link rel="stylesheet" href="/static/styles.css" />
+    <meta charset="UTF-8">
+    <title>Digital Diet Planner</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-    <script>
+
+<body>
+
+<button id="toggle-dark">🌙</button>
+
+<div class="container">
+    <h1>Digital Diet Recommendation App</h1>
+
+    <form method="POST">
+        <input type="number" name="height" placeholder="Height (cm)" required>
+        <input type="number" name="weight" placeholder="Weight (kg)" required>
+
+        <select name="goal" required>
+            <option value="">Select Goal</option>
+            <option value="weight_loss">Weight Loss</option>
+            <option value="weight_gain">Weight Gain</option>
+            <option value="maintain">Maintain Weight</option>
+        </select>
+
+        <button type="submit" class="submit-btn">Get Recommendation</button>
+    </form>
+
+    {% if result %}
+    <div class="result-box">
+        <h2>Your Results</h2>
+        <p><b>BMI:</b> {{ result.bmi }}</p>
+        <p><b>Daily Calories:</b> {{ result.calories }}</p>
+        <p><b>Goal:</b> {{ result.diet }}</p>
+
+        <h3>Recommended Foods</h3>
+        <ul>
+            {% for item in result.diet_list %}
+            <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if history %}
+    <div class="history-box">
+        <h2>BMI History</h2>
+        <canvas id="bmiChart"></canvas>
+    </div>
+    {% endif %}
+</div>
+
+<!-- DARK MODE LOGIC -->
+<script>
 document.getElementById("toggle-dark").onclick = function () {
     document.body.classList.toggle("dark");
 
-    // Save choice
     if (document.body.classList.contains("dark")) {
         localStorage.setItem("mode", "dark");
     } else {
         localStorage.setItem("mode", "light");
     }
-}
+};
 
-// Load saved mode
 if (localStorage.getItem("mode") === "dark") {
     document.body.classList.add("dark");
 }
 </script>
 
+<!-- CHART JS -->
+<script>
+const bmiValues = [
+    {% for h in history %}
+    {{ h[0] }},
+    {% endfor %}
+];
 
-<body>
-    <button id="toggle-dark">🌙 Dark Mode</button>
+const dates = [
+    {% for h in history %}
+    "{{ h[3] }}",
+    {% endfor %}
+];
 
-    <div class="container">
-        <h1 class="title">Digital Diet Recommendation App</h1>
+new Chart(document.getElementById("bmiChart"), {
+    type: "line",
+    data: {
+        labels: dates.reverse(),
+        datasets: [{
+            label: "BMI Over Time",
+            data: bmiValues.reverse(),
+            borderWidth: 3,
+            tension: 0.4
+        }]
+    }
+});
+</script>
 
-        <form method="POST" class="form-box">
-            <label>Height (in cm)</label>
-            <input type="number" name="height" required>
-
-            <label>Weight (in kg)</label>
-            <input type="number" name="weight" required>
-
-            <label>Goal</label>
-            <select name="goal" required>
-                <option>Maintain Weight</option>
-                <option>Lose Weight</option>
-                <option>Gain Weight</option>
-            </select>
-
-            <button type="submit">Get Diet Plan</button>
-        </form>
-
-        {% if result %}
-        <div class="result-box">
-            <h2>Your Results</h2>
-
-            <p><strong>BMI:</strong> {{ result.bmi }}</p>
-            <p><strong>Daily Calorie Goal:</strong> {{ result.calories }} kcal</p>
-
-            <p><strong>Recommended Diet:</strong></p>
-
-            <div class="diet-box">
-                <pre>{{ result.diet }}</pre>
-            </div>
-        </div>
-        {% endif %}
-    </div>
 </body>
 </html>

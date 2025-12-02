@@ -22,3 +22,10 @@ A simple and smart web app built using **Python (Flask) + HTML + CSS** that calc
 ---
 
 ## 📂 Project Structure
+digital_diet_app/
+│── app.py
+│── static/
+│     └── styles.css
+│── templates/
+│     └── index.html
+└── README.md
